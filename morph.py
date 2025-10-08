@@ -157,7 +157,7 @@ def create_morph_animation(input_path, target_path, output_path,
     # First frames (hold_frames): 0.5s each
     # Middle frames (morphing): 0.08s each
     # Last frames (hold_frames): 0.5s each
-    durations = [1] * hold_frames + [0.08] * num_steps + [1] * hold_frames
+    durations = [1.5] * hold_frames + [0.08] * num_steps + [1.5] * hold_frames
     
     imageio.mimsave(output_path, frames, duration=durations, loop=0)
     print("Done! Your morphing animation is ready!")
