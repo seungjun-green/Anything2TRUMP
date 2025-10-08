@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Universal Image Morpher
+Morphs any input image into a target image using feature detection
+"""
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -45,7 +50,8 @@ def get_image_keypoints(image, num_points=100):
 def apply_affine_transform(src, src_tri, dst_tri, size):
     """Apply affine transform to a triangle"""
     warp_mat = cv2.getAffineTransform(np.float32(src_tri), np.float32(dst_tri))
-    dst = cv2.warpAffine(src, warp_mat, (size[0], size[1]), None, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
+    dst = cv2.warpAffine(src, warp_mat, (size[0], size[1]), None,
+                         flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
     return dst
 
 
@@ -103,7 +109,8 @@ def morph_images(img1, img2, points1, points2, alpha):
     return img_morph
 
 
-def create_morph_animation(input_path, target_path, output_path, num_steps=40, hold_frames=10, num_points=150):
+def create_morph_animation(input_path, target_path, output_path, 
+                          num_steps=40, hold_frames=10, num_points=150):
     """Create morphing animation from input to target image"""
     
     print(f"Loading images...")
@@ -116,6 +123,13 @@ def create_morph_animation(input_path, target_path, output_path, num_steps=40, h
     
     print(f"Found {len(input_points)} keypoints in input image")
     print(f"Found {len(target_points)} keypoints in target image")
+    
+    # Ensure both have same number of points
+    min_points = min(len(input_points), len(target_points))
+    input_points = input_points[:min_points]
+    target_points = target_points[:min_points]
+    
+    print(f"Using {min_points} matching keypoints for morphing")
     
     print("Creating morph animation...")
     frames = []
@@ -152,10 +166,14 @@ def create_morph_animation(input_path, target_path, output_path, num_steps=40, h
 def main():
     parser = argparse.ArgumentParser(description='Morph any image into Trump')
     parser.add_argument('input_image', type=str, help='Path to input image')
-    parser.add_argument('-o', '--output', type=str, default='output/morph_output.gif', help='Output GIF path (default: output/morph_output.gif)')
-    parser.add_argument('-t', '--target', type=str, default='assets/trump.jpg', help='Target image path (default: assets/trump.jpg)')
-    parser.add_argument('-s', '--steps', type=int, default=40, help='Number of morphing steps (default: 40)')
-    parser.add_argument('-p', '--points', type=int, default=150, help='Number of keypoints (default: 150)')
+    parser.add_argument('-o', '--output', type=str, default='output/morph_output.gif',
+                       help='Output GIF path (default: output/morph_output.gif)')
+    parser.add_argument('-t', '--target', type=str, default='assets/trump.jpg',
+                       help='Target image path (default: assets/trump.jpg)')
+    parser.add_argument('-s', '--steps', type=int, default=40,
+                       help='Number of morphing steps (default: 40)')
+    parser.add_argument('-p', '--points', type=int, default=150,
+                       help='Number of keypoints (default: 150)')
     
     args = parser.parse_args()
     
