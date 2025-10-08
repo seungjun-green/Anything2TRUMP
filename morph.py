@@ -19,12 +19,13 @@ def get_image_keypoints(image, num_points=100):
     img_array = np.array(image)
     gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
     
+    h, w = image.size[1], image.size[0]
+    
     # Use Shi-Tomasi corner detection
     corners = cv2.goodFeaturesToTrack(gray, num_points, 0.01, 10)
     
     if corners is None or len(corners) < 20:
         # Fallback: create uniform grid if not enough features
-        h, w = image.size[1], image.size[0]
         grid_size = int(np.sqrt(num_points))
         x = np.linspace(0, w-1, grid_size)
         y = np.linspace(0, h-1, grid_size)
@@ -33,15 +34,20 @@ def get_image_keypoints(image, num_points=100):
     else:
         points = corners.reshape(-1, 2)
     
-    # Add border points for complete coverage
-    h, w = image.size[1], image.size[0]
-    border_points = [
-        [0, 0], [w//4, 0], [w//2, 0], [3*w//4, 0], [w-1, 0],
-        [0, h//4], [w-1, h//4],
-        [0, h//2], [w-1, h//2],
-        [0, 3*h//4], [w-1, 3*h//4],
-        [0, h-1], [w//4, h-1], [w//2, h-1], [3*w//4, h-1], [w-1, h-1]
-    ]
+    # Add comprehensive border points for complete coverage
+    # This ensures NO black backgrounds by covering all edges
+    border_density = 16  # More points = better coverage
+    
+    # Top and bottom edges
+    top_edge = [[i * w / border_density, 0] for i in range(border_density + 1)]
+    bottom_edge = [[i * w / border_density, h - 1] for i in range(border_density + 1)]
+    
+    # Left and right edges (skip corners to avoid duplicates)
+    left_edge = [[0, i * h / border_density] for i in range(1, border_density)]
+    right_edge = [[w - 1, i * h / border_density] for i in range(1, border_density)]
+    
+    # Combine all border points
+    border_points = top_edge + bottom_edge + left_edge + right_edge
     
     points = np.vstack([points, border_points])
     return points.astype(np.float32)
@@ -97,7 +103,8 @@ def morph_images(img1, img2, points1, points2, alpha):
     # Get Delaunay triangulation
     tri = Delaunay(points)
     
-    img_morph = np.zeros(img1.shape, dtype=img1.dtype)
+    # Start with a copy of img1 to avoid black backgrounds
+    img_morph = ((1 - alpha) * img1 + alpha * img2).astype(np.uint8)
     
     for triangle in tri.simplices:
         x, y, z = triangle
