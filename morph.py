@@ -67,6 +67,19 @@ def morph_triangle(img1, img2, img, t1, t2, t, alpha):
     r2 = cv2.boundingRect(np.float32([t2]))
     r = cv2.boundingRect(np.float32([t]))
     
+    # Clamp bounding box to image dimensions
+    h, w = img.shape[:2]
+    r = (max(0, r[0]), max(0, r[1]), 
+         min(r[2], w - r[0]), min(r[3], h - r[1]))
+    r1 = (max(0, r1[0]), max(0, r1[1]), 
+          min(r1[2], w - r1[0]), min(r1[3], h - r1[1]))
+    r2 = (max(0, r2[0]), max(0, r2[1]), 
+          min(r2[2], w - r2[0]), min(r2[3], h - r2[1]))
+    
+    # Skip invalid rectangles
+    if r[2] <= 0 or r[3] <= 0 or r1[2] <= 0 or r1[3] <= 0 or r2[2] <= 0 or r2[3] <= 0:
+        return
+    
     t1_rect = []
     t2_rect = []
     t_rect = []
@@ -84,15 +97,15 @@ def morph_triangle(img1, img2, img, t1, t2, t, alpha):
     
     size = (r[2], r[3])
     
-    if size[0] <= 0 or size[1] <= 0:
-        return
-    
     warp_image1 = apply_affine_transform(img1_rect, t1_rect, t_rect, size)
     warp_image2 = apply_affine_transform(img2_rect, t2_rect, t_rect, size)
     
     img_rect = (1.0 - alpha) * warp_image1 + alpha * warp_image2
     
-    img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] = img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] * (1 - mask) + img_rect * mask
+    # Ensure dimensions match before blending
+    target_region = img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]]
+    if target_region.shape == mask.shape == img_rect.shape:
+        img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] = target_region * (1 - mask) + img_rect * mask
 
 
 def morph_images(img1, img2, points1, points2, alpha):
