@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Universal Image Morpher
-Morphs any input image into a target image using feature detection
-"""
-
 import cv2
 import numpy as np
 from PIL import Image
@@ -143,7 +138,14 @@ def create_morph_animation(input_path, target_path, output_path, num_steps=40, h
         frames.append(target_array.copy())
     
     print(f"Saving GIF to {output_path}...")
-    imageio.mimsave(output_path, frames, duration=0.08, loop=0)
+    
+    # Create custom duration for each frame
+    # First frames (hold_frames): 0.5s each
+    # Middle frames (morphing): 0.08s each
+    # Last frames (hold_frames): 0.5s each
+    durations = [0.5] * hold_frames + [0.08] * num_steps + [0.5] * hold_frames
+    
+    imageio.mimsave(output_path, frames, duration=durations, loop=0)
     print("Done! Your morphing animation is ready!")
 
 
